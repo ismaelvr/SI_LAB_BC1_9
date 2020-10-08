@@ -135,6 +135,7 @@ class Maze:
                     neighbours.append((direction, neighbour))
         return neighbours
 
+
     def quedan_celdas(self):
         for i in range(self.xmax):
             for j in range(self.ymax):
@@ -199,6 +200,7 @@ class Maze:
             print('<line x1="0" y1="0" x2="0" y2="{}"/>'.format(height),file=f)
             print('</svg>', file=f)
     
+    
     def crear_laberinto(self):
         #podemos hacer que cuando llegue al destino, recorra la array de visitados y ahí marque todos a true
         celda_actual = self.getCelda(self.ix, self.iy)
@@ -238,19 +240,30 @@ class Maze:
         while self.quedan_celdas():
             n, m = self.casilla_aleatoria_no_visitada()
             celda_actual = self.getCelda(n, m)
-            
-            while not celda_actual.visitado: #arreglar
+            camino_secundario = []
+            while not celda_actual.visitado:  #arreglar
+
                 vecinos = self.encontrar_vecinos(celda_actual)
                 #print(vecinos)
-                celda_actual.visitado = True
+                camino_secundario.append(celda_actual)
+                #celda_actual.visitado = True
                 direccion, siguiente_celda = random.choice(vecinos)
+                if siguiente_celda.visitado:
+                    celda_actual.crear_vecino(siguiente_celda,direccion)
+                    for i in range(len(camino_secundario)):
+                        celda = camino_secundario.pop()
+                        celda.visitado = True
+                    continue   
                 celda_actual.crear_vecino(siguiente_celda,direccion)
                 celda_actual = siguiente_celda
-            maze.write_svg("maze_terminado.svg")
+            #celda_actual.crear_vecino(,direccion)
+        maze.write_svg("maze_terminado.svg")
         print("Ya no hay mas celdas")
               
 # Tamaño laberinto
-nx, ny = 10,10
+nx, ny = 10, 10
+#nx = int(input())
+#ny = int(input())
 
 maze = Maze(nx, ny)
 maze.crear_laberinto() #cambiar las paredes de abajo y derecha
