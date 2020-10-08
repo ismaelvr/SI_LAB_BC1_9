@@ -9,9 +9,10 @@ class Cell:
     # Opuestos
     wall_pairs = {'N': 'S', 'S': 'N', 'E': 'O', 'O': 'E'}
     visitado = False
-
+    
     def __init__(self, x, y):
-      
+
+        self.valor=0
         self.x, self.y = x, y
 
         self.walls = {'N': False, 'E': False, 'S': False, 'O': False}
@@ -92,16 +93,18 @@ class Maze:
 
     def generar_json(self, maze):
 
-        with open("maze.json", 'w') as file:
             
-            mazejson = {
-                "rows": self.xmax,
-                "columns": self.ymax    
-                
-            }
-            json.dump(mazejson, file)
-            file.close
-
+            json='{{\n\t"rows" : {},\n\t"cols" : {},\n\t"max_n" : 4,'.format(nx,ny)
+            json=json+'\n\t"mov" : [[-1,0],[0,1],[1,0],[0,1]\n\t"id_mov" : ["N","E","S","O"],\n\t"cells" : {'
+            for i in range(self.xmax):
+                for j in range(self.ymax):
+                    json=json+'\n\t\t"( {}, {} )" : {{"value": {},"neighbors": {}}},'.format(i,j,self.maze_map[i][j].valor,list(self.maze_map[i][j].walls.values()))
+            json= json[:-1]
+            json=json+'\n\t}\n}'
+            print(json)
+            with open("maze.json", 'w') as file:
+                file.write(json)
+                file.close()
 
     def encontrar_vecinos_validos(self, cell):
         """Return a list of unvisited neighbours to cell."""
@@ -270,4 +273,3 @@ maze.crear_laberinto() #cambiar las paredes de abajo y derecha
 maze.guardar_txt(maze)
 maze.generar_json(maze)
 #maze.draw()
-print(maze)
