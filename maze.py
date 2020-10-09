@@ -92,10 +92,10 @@ class Maze:
 
             
             json='{{\n\t"rows" : {},\n\t"cols" : {},\n\t"max_n" : 4,'.format(nx,ny)
-            json=json+'\n\t"mov" : [[-1,0],[0,1],[1,0],[0,1]\n\t"id_mov" : ["N","E","S","O"],\n\t"cells" : {'
+            json=json+'\n\t"mov" : [[-1,0],[0,1],[1,0],[0,1]],\n\t"id_mov" : ["N","E","S","O"],\n\t"cells" : {'
             for i in range(self.xmax):
                 for j in range(self.ymax):
-                    json=json+'\n\t\t"( {}, {} )" : {{"value": {},"neighbors": {}}},'.format(i,j,self.maze_map[i][j].valor,list(self.maze_map[i][j].walls.values()))
+                    json=json+'\n\t\t"( {}, {} )" : {{"value": {},"neighbors": {}}},'.format(i,j,self.maze_map[i][j].valor,str(list(self.maze_map[i][j].walls.values())).lower())
             json= json[:-1]
             json=json+'\n\t}\n}'
             with open("maze.json", 'w') as file:
