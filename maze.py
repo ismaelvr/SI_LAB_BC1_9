@@ -3,6 +3,7 @@ import random
 import matplotlib.pyplot as plt
 import numpy as np
 import json
+from time import time
 from svglib.svglib import svg2rlg
 from reportlab.graphics import renderPM
 
@@ -59,7 +60,7 @@ class Maze:
         while self.getCelda(n,m).visitado:
             n = random.randrange(self.xmax)
             m = random.randrange(self.ymax)
-        print(n,m)
+        #print(f"Casilla aleatoria : {n},{m}")
         return n,m
 
     def getCelda(self, x, y):
@@ -88,19 +89,17 @@ class Maze:
             maze_rows.append(''.join(maze_row))
         return '\n'.join(maze_rows)
 
-    def generar_json(self, maze):
-
-            
-            json='{{\n\t"rows" : {},\n\t"cols" : {},\n\t"max_n" : 4,'.format(nx,ny)
-            json=json+'\n\t"mov" : [[-1,0],[0,1],[1,0],[0,1]\n\t"id_mov" : ["N","E","S","O"],\n\t"cells" : {'
-            for i in range(self.xmax):
-                for j in range(self.ymax):
-                    json=json+'\n\t\t"( {}, {} )" : {{"value": {},"neighbors": {}}},'.format(i,j,self.maze_map[i][j].valor,list(self.maze_map[i][j].walls.values()))
-            json= json[:-1]
-            json=json+'\n\t}\n}'
-            with open("maze.json", 'w') as file:
-                file.write(json)
-                file.close()
+    def generar_json(self, maze):         
+        json='{{\n\t"rows" : {},\n\t"cols" : {},\n\t"max_n" : 4,'.format(nx,ny)
+        json=json+'\n\t"mov" : [[-1,0],[0,1],[1,0],[0,1]],\n\t"id_mov" : ["N","E","S","O"],\n\t"cells" : {'
+        for i in range(self.xmax):
+            for j in range(self.ymax):
+                json=json+'\n\t\t"( {}, {} )" : {{"value": {},"neighbors": {}}},'.format(i,j,self.maze_map[i][j].valor,list(self.maze_map[i][j].walls.values())).lower()
+        json= json[:-1]
+        json=json+'\n\t}\n}'
+        with open("maze.json", 'w') as file:
+            file.write(json)
+            file.close()
 
     def encontrar_vecinos_validos(self, cell):
         """Return a list of unvisited neighbours to cell."""
@@ -118,7 +117,7 @@ class Maze:
                     neighbours.append((direction, neighbour))
         return neighbours
 
-    def encontrar_vecinos(self, cell):
+    def encontrar_vecinos(self, cell, camino):
         """Return a list of unvisited neighbours to cell."""
 
         self.delta = [('O', (-1,0)),
@@ -128,7 +127,7 @@ class Maze:
         neighbours = []
         for direction, (dx,dy) in self.delta:
             x2, y2 = cell.x + dx, cell.y + dy
-            if (0 <= x2 < nx) and (0 <= y2 < ny):
+            if (0 <= x2 < nx) and (0 <= y2 < ny) and self.getCelda(x2, y2) not in camino:
                 neighbour = maze.getCelda(x2, y2)
                 if not neighbour.tiene_muros():
                     neighbours.append((direction, neighbour))
@@ -155,7 +154,7 @@ class Maze:
         # Pad the maze all around by this amount.
         padding = 10
         # Height and width of the maze image (excluding padding), in pixels
-        height = 500
+        height = self.xmax*20
         width = int(height * aspect_ratio)
         # Scaling factors mapping maze coordinates to image coordinates
         scy, scx = height / self.xmax, width / self.ymax
@@ -211,13 +210,13 @@ class Maze:
                 vecinos_validos = self.encontrar_vecinos_validos(celda_actual)
                 
                 if not vecinos_validos:
-                    print(f"Ibamos a {celda_actual.x}, {celda_actual.y} pero no se puede")
+                    #print(f"Ibamos a {celda_actual.x}, {celda_actual.y} pero no se puede")
                     celda_actual.visitado = True
                     celda_actual = visitados.pop()
                     continue
                 
                 celda_actual.visitado = True
-                print(f'{celda_actual.x}, {celda_actual.y}')
+                #print(f'{celda_actual.x}, {celda_actual.y}')
                 #print(vecinos_validos)
                 direccion, siguiente_celda = random.choice(vecinos_validos)
                 celda_actual.crear_vecino(siguiente_celda,direccion)
@@ -228,9 +227,9 @@ class Maze:
                 f.write("\n")
                 #print(visitados)
                 celda_actual = siguiente_celda
-        
-        print(f"Hemos llegado al destino: {celda_actual.x}, {celda_actual.y}")
-        print("Obviemos los siguiente")
+            celda_actual.visitado = True #Marcamos el destino como true
+        #print(f"Hemos llegado al destino: {celda_actual.x}, {celda_actual.y}")
+        #print("Ahora vamos a rellenar lo que falta")
         maze.write_svg("maze_a_medias.svg")
         #Hemos encontrado el destino pero igual quedan casillas por visitar
         
@@ -238,32 +237,58 @@ class Maze:
             n, m = self.casilla_aleatoria_no_visitada()
             celda_actual = self.getCelda(n, m)
             camino_secundario = []
-            while not celda_actual.visitado:  #arreglar
+            while not celda_actual.visitado or celda_actual in camino_secundario:  #arreglar
 
-                vecinos = self.encontrar_vecinos(celda_actual)
+                vecinos = self.encontrar_vecinos(celda_actual, camino_secundario)
                 #print(vecinos)
-                camino_secundario.append(celda_actual)
-                #celda_actual.visitado = True
+                celda_actual.visitado = True
+
+                if not vecinos:
+                    #print(f"Ibamos a {celda_actual.x}, {celda_actual.y} pero no se puede")
+                    celda_actual.visitado = True
+                    celda_temporal = camino_secundario.pop()  #Es raro pero funciona
+                    camino_secundario.insert(0, celda_temporal)
+                    camino_secundario.insert(0,celda_actual)
+                    celda_actual = celda_temporal
+                    continue
+                
                 direccion, siguiente_celda = random.choice(vecinos)
-                if siguiente_celda.visitado:
-                    celda_actual.crear_vecino(siguiente_celda,direccion)
-                    for i in range(len(camino_secundario)):
-                        celda = camino_secundario.pop()
-                        celda.visitado = True
-                    continue   
+                
+                if siguiente_celda in camino_secundario:
+                    #celda_actual.visitado = True #Redundante
+                    celda_actual = camino_secundario.pop()
+                    
+                    #print(f"Vecino ya en el camino: {siguiente_celda.x},{siguiente_celda.y}")
+                    continue
+        
+                camino_secundario.append(celda_actual)
                 celda_actual.crear_vecino(siguiente_celda,direccion)
+                celda_actual.visitado = True
                 celda_actual = siguiente_celda
-            #celda_actual.crear_vecino(,direccion)
+                #print(f"Siguiente casilla: {celda_actual.x},{celda_actual.y} ")
+            #print("Parece que se ha salido")
+            
         maze.write_svg("maze_terminado.svg")
-        print("Ya no hay mas celdas")
+        #print("Ya no hay mas celdas")
               
 # Tamaño laberinto
-nx, ny = 20,20 
+nx, ny = 500,500
 #nx = int(input())
 #ny = int(input())
-
+start_time = time()
 maze = Maze(nx, ny)
 maze.crear_laberinto() #cambiar las paredes de abajo y derecha
+
+elapsed_time = time() - start_time
+print(f"La generación del laberinto ha tardado {elapsed_time} segundos")
+
+start_time = time()
 maze.generar_json(maze)
+elapsed_time = time() - start_time
+print(f"La generación del JSON ha tardado {elapsed_time} segundos")
+
+start_time = time()
 drawing = svg2rlg("maze_terminado.svg")
 renderPM.drawToFile(drawing, "maze.png", fmt="PNG")
+elapsed_time = time() - start_time
+print(f"La generación de la imagen ha tardado {elapsed_time} segundos")
