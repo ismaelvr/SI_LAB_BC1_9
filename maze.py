@@ -3,6 +3,8 @@ import random
 import matplotlib.pyplot as plt
 import numpy as np
 import json
+from svglib.svglib import svg2rlg
+from reportlab.graphics import renderPM
 
 class Cell:
     
@@ -86,11 +88,6 @@ class Maze:
             maze_rows.append(''.join(maze_row))
         return '\n'.join(maze_rows)
 
-    def guardar_txt(self, maze):
-        with open("maze.txt", 'w') as file:
-            file.write(str(maze))
-            file.close()
-
     def generar_json(self, maze):
 
             
@@ -101,7 +98,6 @@ class Maze:
                     json=json+'\n\t\t"( {}, {} )" : {{"value": {},"neighbors": {}}},'.format(i,j,self.maze_map[i][j].valor,list(self.maze_map[i][j].walls.values()))
             json= json[:-1]
             json=json+'\n\t}\n}'
-            print(json)
             with open("maze.json", 'w') as file:
                 file.write(json)
                 file.close()
@@ -137,7 +133,6 @@ class Maze:
                 if not neighbour.tiene_muros():
                     neighbours.append((direction, neighbour))
         return neighbours
-
 
     def quedan_celdas(self):
         for i in range(self.xmax):
@@ -202,8 +197,7 @@ class Maze:
             print('<line x1="0" y1="0" x2="{}" y2="0"/>'.format(width), file=f)
             print('<line x1="0" y1="0" x2="0" y2="{}"/>'.format(height),file=f)
             print('</svg>', file=f)
-    
-    
+     
     def crear_laberinto(self):
         #podemos hacer que cuando llegue al destino, recorra la array de visitados y ahí marque todos a true
         celda_actual = self.getCelda(self.ix, self.iy)
@@ -264,12 +258,12 @@ class Maze:
         print("Ya no hay mas celdas")
               
 # Tamaño laberinto
-nx, ny = 10, 10
+nx, ny = 20,20 
 #nx = int(input())
 #ny = int(input())
 
 maze = Maze(nx, ny)
 maze.crear_laberinto() #cambiar las paredes de abajo y derecha
-maze.guardar_txt(maze)
 maze.generar_json(maze)
-#maze.draw()
+drawing = svg2rlg("maze_terminado.svg")
+renderPM.drawToFile(drawing, "maze.png", fmt="PNG")
