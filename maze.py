@@ -2,7 +2,6 @@
 import random
 import matplotlib.pyplot as plt
 import numpy as np
-import json
 from time import time
 from svglib.svglib import svg2rlg
 from reportlab.graphics import renderPM
@@ -154,10 +153,14 @@ class Maze:
         # Pad the maze all around by this amount.
         padding = 10
         # Height and width of the maze image (excluding padding), in pixels
-        height = self.xmax*20
+        height = self.xmax*30
         width = int(height * aspect_ratio)
+        if self.ymax/self.xmax >=2:
+            width=width*int(self.ymax/self.xmax)
+            height=height*int(self.ymax/self.xmax)
         # Scaling factors mapping maze coordinates to image coordinates
-        scy, scx = height / self.xmax, width / self.ymax
+        scy, scx = height / self.ymax, width / self.xmax
+        
 
         def write_wall(f, x1, y1, x2, y2):
             """Write a single wall to the SVG image file handle f."""
@@ -272,12 +275,13 @@ class Maze:
         #print("Ya no hay mas celdas")
               
 # Tamaño laberinto
-nx, ny = 30,30
+nx, ny = 10,150
 #nx = int(input())
 #ny = int(input())
 start_time = time()
 maze = Maze(nx, ny)
 maze.crear_laberinto() #cambiar las paredes de abajo y derecha
+
 
 elapsed_time = time() - start_time
 print(f"La generación del laberinto ha tardado {elapsed_time} segundos")
