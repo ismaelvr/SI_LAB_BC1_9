@@ -2,10 +2,10 @@
 import random
 import matplotlib.pyplot as plt
 import numpy as np
-import json
 from time import time
 from svglib.svglib import svg2rlg
 from reportlab.graphics import renderPM
+import json
 
 class Cell:
     
@@ -19,8 +19,7 @@ class Cell:
         self.x, self.y = x, y
 
         self.walls = {'N': False, 'E': False, 'S': False, 'O': False}
- 
-    def tiene_muros(self):
+    def tiene_muros(self): 
         
         return all(self.walls.values())
     
@@ -28,6 +27,139 @@ class Cell:
         
         self.walls[wall] = True
         other.walls[Cell.wall_pairs[wall]] = True
+
+###############################################
+class Cell_from_json:
+
+    def __init__(self, x, y, walls):
+
+        self.x, self.y = x, y
+
+        self.walls = walls
+
+class Maze_from_json:
+    
+    def __init__(self, filename):
+        
+        f = open(filename, "r")
+        contenido = f.read()
+        datos_json = json.loads(contenido)
+        #self.comprobar_json(datos_json)
+        
+
+        cells = datos_json.get("cells")
+
+        self.ymax = datos_json['rows']
+        self.xmax = datos_json['cols']
+
+        self.maze_map = [[Cell_from_json(y,x, cells.get("({}, {})".format(y,x)).get("neighbors")) for y in range(self.ymax)] for x in range(self.xmax)]
+        
+
+    def comprobar_json(self, datos_json):
+       
+
+        if not len(datos_json) == 6:
+            print("Archivo JSON no válido")
+            return 0
+
+        try:
+            r = int(datos_json.get("rows"))
+            c = int(datos_json.get("cols"))
+            m = int(datos_json.get("max_n"))
+        except:
+            print("Archivo JSON no válido")
+            return 0
+
+        if r <= 0 or c <= 0:
+            return 0
+
+        if m != 4:
+            print("Error. Únicamente debe haber 4 vecinos posibles")
+            return 0
+
+        elemento4 = datos_json.get("mov")
+        elemento5 = datos_json.get("id_mov")
+
+        comprobacion = [('N', (-1,0)),('E', (0,1)),('S', (1,0)),('O', (0,-1))]
+        
+        j = 0
+        for coor, (e1,e2) in comprobacion:
+
+            if e1 != elemento4[j][0]:
+                print("Archivo JSON no válido")
+            
+            if e2 != elemento4[j][1]:
+                print("Archivo JSON no válido")
+
+            if coor != elemento5[j]:
+                print("Archivo JSON no válido")
+                return 0
+                
+            j = j + 1
+
+        if elemento5[0] != 'N' or elemento5[1] != 'E' or elemento5[2] != 'S' or elemento5[3] != 'O':
+            print("Archivo JSON no válido")
+            return 0
+
+    def getCelda(self, x, y):
+  
+        return self.maze_map[x][y]
+
+    def write_svg(self, filename):
+        """Write an SVG image of the maze to filename."""
+
+        aspect_ratio = self.xmax / self.ymax
+        # Pad the maze all around by this amount.
+        padding = 10
+        # Height and width of the maze image (excluding padding), in pixels
+        height = self.xmax*30
+        width = int(height * aspect_ratio)
+        if self.ymax/self.xmax >=2:
+            width=width*int(self.ymax/self.xmax)
+            height=height*int(self.ymax/self.xmax)
+        # Scaling factors mapping maze coordinates to image coordinates
+        scy, scx = height / self.ymax, width / self.xmax
+        
+
+        def write_wall(f, x1, y1, x2, y2):
+            """Write a single wall to the SVG image file handle f."""
+
+            print('<line x1="{}" y1="{}" x2="{}" y2="{}"/>'
+                                .format(x1, y1, x2, y2), file=f)
+
+        # Write the SVG image file for maze
+        with open(filename, 'w') as f:
+            # SVG preamble and styles.
+            print('<?xml version="1.0" encoding="utf-8"?>', file=f)
+            print('<svg xmlns="http://www.w3.org/2000/svg"', file=f)
+            print('    xmlns:xlink="http://www.w3.org/1999/xlink"', file=f)
+            print('    width="{:d}" height="{:d}" viewBox="{} {} {} {}">'
+                    .format(width+2*padding, height+2*padding,
+                        -padding, -padding, width+2*padding, height+2*padding),
+                  file=f)
+            print('<defs>\n<style type="text/css"><![CDATA[', file=f)
+            print('line {', file=f)
+            print('    stroke: #000000;\n    stroke-linecap: square;', file=f)
+            print('    stroke-width: 5;\n}', file=f)
+            print(']]></style>\n</defs>', file=f)
+            # Draw the "South" and "East" walls of each cell, if present (these
+            # are the "North" and "West" walls of a neighbouring cell in
+            # general, of course).
+            for x in range(self.xmax):
+                for y in range(self.ymax):
+                    if not maze_from_json.getCelda(x,y).walls[2]:
+                        x1, y1, x2, y2 = x*scx, (y+1)*scy, (x+1)*scx, (y+1)*scy
+                        write_wall(f, x1, y1, x2, y2)
+                    if not maze_from_json.getCelda(x,y).walls[1]:
+                        x1, y1, x2, y2 = (x+1)*scx, y*scy, (x+1)*scx, (y+1)*scy
+                        write_wall(f, x1, y1, x2, y2)
+            # Draw the North and West maze border, which won't have been drawn
+            # by the procedure above. 
+            print('<line x1="0" y1="0" x2="{}" y2="0"/>'.format(width), file=f)
+            print('<line x1="0" y1="0" x2="0" y2="{}"/>'.format(height),file=f)
+            print('</svg>', file=f)
+
+#######################################
 
 class Maze:
     
@@ -91,7 +223,7 @@ class Maze:
 
     def generar_json(self, maze):         
         json='{{\n\t"rows" : {},\n\t"cols" : {},\n\t"max_n" : 4,'.format(nx,ny)
-        json=json+'\n\t"mov" : [[-1,0],[0,1],[1,0],[0,1]],\n\t"id_mov" : ["N","E","S","O"],\n\t"cells" : {'
+        json=json+'\n\t"mov" : [[-1,0],[0,1],[1,0],[0,-1]],\n\t"id_mov" : ["N","E","S","O"],\n\t"cells" : {'
         for i in range(self.xmax):
             for j in range(self.ymax):
                 json=json+'\n\t\t"( {}, {} )" : {{"value": {},"neighbors": {}}},'.format(i,j,self.maze_map[i][j].valor,list(self.maze_map[i][j].walls.values())).lower()
@@ -101,8 +233,10 @@ class Maze:
             file.write(json)
             file.close()
 
+    #def leer_json(self):
+       
+
     def encontrar_vecinos_validos(self, cell):
-        """Return a list of unvisited neighbours to cell."""
 
         self.delta = [('O', (-1,0)),
                  ('E', (1,0)),
@@ -118,8 +252,7 @@ class Maze:
         return neighbours
 
     def encontrar_vecinos(self, cell, camino):
-        """Return a list of unvisited neighbours to cell."""
-
+        
         self.delta = [('O', (-1,0)),
                  ('E', (1,0)),
                  ('S', (0,1)),
@@ -148,20 +281,22 @@ class Maze:
         return False
     
     def write_svg(self, filename):
-        """Write an SVG image of the maze to filename."""
-
+     
         aspect_ratio = self.xmax / self.ymax
         # Pad the maze all around by this amount.
         padding = 10
         # Height and width of the maze image (excluding padding), in pixels
-        height = self.xmax*20
+        height = self.xmax*30
         width = int(height * aspect_ratio)
+        if self.ymax/self.xmax >=2:
+            width=width*int(self.ymax/self.xmax)
+            height=height*int(self.ymax/self.xmax)
         # Scaling factors mapping maze coordinates to image coordinates
-        scy, scx = height / self.xmax, width / self.ymax
+        scy, scx = height / self.ymax, width / self.xmax
+        
 
         def write_wall(f, x1, y1, x2, y2):
-            """Write a single wall to the SVG image file handle f."""
-
+         
             print('<line x1="{}" y1="{}" x2="{}" y2="{}"/>'
                                 .format(x1, y1, x2, y2), file=f)
 
@@ -202,35 +337,32 @@ class Maze:
         celda_actual = self.getCelda(self.ix, self.iy)
         visitados = []
         #celda_actual.visitado = True
-
+    
         #Primero encontramos el destino
-        with open("depuracion.txt", 'w') as f:
-            while not self.destino_encontrado(celda_actual): 
-                #El destino va a ser siempre el mismo, nosotro cambiamos la posicion inicial
-                vecinos_validos = self.encontrar_vecinos_validos(celda_actual)
-                
-                if not vecinos_validos:
-                    #print(f"Ibamos a {celda_actual.x}, {celda_actual.y} pero no se puede")
-                    celda_actual.visitado = True
-                    celda_actual = visitados.pop()
-                    continue
-                
+        while not self.destino_encontrado(celda_actual): 
+            #El destino va a ser siempre el mismo, nosotro cambiamos la posicion inicial
+            vecinos_validos = self.encontrar_vecinos_validos(celda_actual)
+            
+            if not vecinos_validos:
+                #print(f"Ibamos a {celda_actual.x}, {celda_actual.y} pero no se puede")
                 celda_actual.visitado = True
-                #print(f'{celda_actual.x}, {celda_actual.y}')
-                #print(vecinos_validos)
-                direccion, siguiente_celda = random.choice(vecinos_validos)
-                celda_actual.crear_vecino(siguiente_celda,direccion)
-                visitados.append(celda_actual)
-                f.write(str(celda_actual.x))
-                f.write(",")
-                f.write(str(celda_actual.y))
-                f.write("\n")
-                #print(visitados)
-                celda_actual = siguiente_celda
-            celda_actual.visitado = True #Marcamos el destino como true
+                celda_actual = visitados.pop()
+                continue
+            
+            celda_actual.visitado = True
+            #print(f'{celda_actual.x}, {celda_actual.y}')
+            #print(vecinos_validos)
+            direccion, siguiente_celda = random.choice(vecinos_validos)
+            celda_actual.crear_vecino(siguiente_celda,direccion)
+            visitados.append(celda_actual)
+            #print(visitados)
+            celda_actual = siguiente_celda
+        celda_actual.visitado = True #Marcamos el destino como true
+        
+        
         #print(f"Hemos llegado al destino: {celda_actual.x}, {celda_actual.y}")
         #print("Ahora vamos a rellenar lo que falta")
-        maze.write_svg("maze_a_medias.svg")
+        #maze.write_svg("maze_a_medias.svg")
         #Hemos encontrado el destino pero igual quedan casillas por visitar
         
         while self.quedan_celdas():
@@ -268,27 +400,49 @@ class Maze:
                 #print(f"Siguiente casilla: {celda_actual.x},{celda_actual.y} ")
             #print("Parece que se ha salido")
             
-        maze.write_svg("maze_terminado.svg")
+        #maze.write_svg("maze_terminado.svg")
         #print("Ya no hay mas celdas")
-              
-# Tamaño laberinto
-nx, ny = 30,30
-#nx = int(input())
-#ny = int(input())
-start_time = time()
-maze = Maze(nx, ny)
-maze.crear_laberinto() #cambiar las paredes de abajo y derecha
 
-elapsed_time = time() - start_time
-print(f"La generación del laberinto ha tardado {elapsed_time} segundos")
+print("Elige: ")
+print("1. Crear laberinto aleatorio ")
+print("2. Cargar laberinto desde JSON ")
 
-start_time = time()
-maze.generar_json(maze)
-elapsed_time = time() - start_time
-print(f"La generación del JSON ha tardado {elapsed_time} segundos")
+eleccion = int(input())
+if (eleccion == 1):
+    print("Introduzca el ancho del laberinto:")
+    nx = int(input())
+    print("Introduzca el alto del laberinto:")
+    ny = int(input())
 
-start_time = time()
-drawing = svg2rlg("maze_terminado.svg")
-renderPM.drawToFile(drawing, "maze.png", fmt="PNG")
-elapsed_time = time() - start_time
-print(f"La generación de la imagen ha tardado {elapsed_time} segundos")
+    start_time = time()
+    maze = Maze(nx, ny)
+    maze.crear_laberinto() #cambiar las paredes de abajo y derecha
+    elapsed_time = time() - start_time
+    print(f"La generación del laberinto ha tardado {elapsed_time} segundos")
+
+    start_time = time()
+    maze.generar_json(maze)
+    elapsed_time = time() - start_time
+    print(f"La generación del JSON ha tardado {elapsed_time} segundos")
+    
+    start_time = time()
+    maze.write_svg("maze.svg")
+    drawing = svg2rlg("maze.svg")
+    renderPM.drawToFile(drawing, "maze.png", fmt="PNG")
+    elapsed_time = time() - start_time
+    print(f"La generación de la imagen ha tardado {elapsed_time} segundos")
+elif (eleccion == 2):
+    print("Indica el nombre del archivo")
+    filename = input()
+    start_time = time()
+    maze_from_json = Maze_from_json("ejemplosJson/"+filename+".json")  #PEDRO
+    elapsed_time = time() - start_time
+    print(f"La lectura del JSON y creación del laberinto ha tardado {elapsed_time} segundos")
+    start_time = time()
+    maze_from_json.write_svg("maze_from_json.svg")
+    drawing = svg2rlg("maze_from_json.svg")
+    renderPM.drawToFile(drawing, "maze_from_json.png", fmt = "PNG")
+    elapsed_time = time() - start_time
+    print(f"La generación del PNG ha tardado {elapsed_time} segundos")
+else:
+    print("Eleccion incorrecta. Fin del programa")
