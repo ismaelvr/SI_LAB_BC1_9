@@ -39,30 +39,72 @@ class Cell_from_json:
 
 class Maze_from_json:
     
-    def __init__(self, nx, ny, cells):
-        self.xmax = nx
-        self.ymax = ny
+    def __init__(self, filename):
+        
+        f = open(filename, "r")
+        contenido = f.read()
+        datos_json = json.loads(contenido)
+        #self.comprobar_json(datos_json)
+        
 
-        print("Hola")
-        """
-        for i in range(nx):
-            for j in range(ny):
-                valor = cells.get("({}, {})".format(i,j))
-                vecinos = valor.get("neighbors")
+        cells = datos_json.get("cells")
+
+        self.ymax = datos_json['rows']
+        self.xmax = datos_json['cols']
+
+        self.maze_map = [[Cell_from_json(y,x, cells.get("({}, {})".format(y,x)).get("neighbors")) for y in range(self.ymax)] for x in range(self.xmax)]
+        
+
+    def comprobar_json(self, datos_json):
+       
+
+        if not len(datos_json) == 6:
+            print("Archivo JSON no válido")
+            return 0
+
+        try:
+            r = int(datos_json.get("rows"))
+            c = int(datos_json.get("cols"))
+            m = int(datos_json.get("max_n"))
+        except:
+            print("Archivo JSON no válido")
+            return 0
+
+        if r <= 0 or c <= 0:
+            return 0
+
+        if m != 4:
+            print("Error. Únicamente debe haber 4 vecinos posibles")
+            return 0
+
+        elemento4 = datos_json.get("mov")
+        elemento5 = datos_json.get("id_mov")
+
+        comprobacion = [('N', (-1,0)),('E', (0,1)),('S', (1,0)),('O', (0,-1))]
+        
+        j = 0
+        for coor, (e1,e2) in comprobacion:
+
+            if e1 != elemento4[j][0]:
+                print("Archivo JSON no válido")
+            
+            if e2 != elemento4[j][1]:
+                print("Archivo JSON no válido")
+
+            if coor != elemento5[j]:
+                print("Archivo JSON no válido")
+                return 0
                 
-                norte = vecinos[0] 
-                este = vecinos[1]           [Norte, Sur]
-                                            {N: False}
-                sur = vecinos[2]
-                oeste = vecinos[3]
+            j = j + 1
 
-                walls = {'N': norte,'E': este,'S': sur,'O': oeste}"""
+        if elemento5[0] != 'N' or elemento5[1] != 'E' or elemento5[2] != 'S' or elemento5[3] != 'O':
+            print("Archivo JSON no válido")
+            return 0
 
-        print(cells.get("({}, {})".format(0,0)).get("neighbors"))
-        self.maze_map = [[Cell_from_json(x, y,cells.get("({}, {})".format(x,y)).get("neighbors")) for y in range(ny)] for x in range(nx)]       
+    def getCelda(self, x, y):
+  
+        return self.maze_map[x][y]
 
-      
-    
     def write_svg(self, filename):
         """Write an SVG image of the maze to filename."""
 
@@ -105,10 +147,10 @@ class Maze_from_json:
             # general, of course).
             for x in range(self.xmax):
                 for y in range(self.ymax):
-                    if not maze.getCelda(x,y).walls['S']:
+                    if not maze_from_json.getCelda(x,y).walls[2]:
                         x1, y1, x2, y2 = x*scx, (y+1)*scy, (x+1)*scx, (y+1)*scy
                         write_wall(f, x1, y1, x2, y2)
-                    if not maze.getCelda(x,y).walls['E']:
+                    if not maze_from_json.getCelda(x,y).walls[1]:
                         x1, y1, x2, y2 = (x+1)*scx, y*scy, (x+1)*scx, (y+1)*scy
                         write_wall(f, x1, y1, x2, y2)
             # Draw the North and West maze border, which won't have been drawn
@@ -118,6 +160,7 @@ class Maze_from_json:
             print('</svg>', file=f)
 
 #######################################
+"""
 class Maze:
     
     def __init__(self, nx, ny):
@@ -190,65 +233,10 @@ class Maze:
             file.write(json)
             file.close()
 
-    def leer_json(self):
-        f = open("puzzle_10x10.json", "r")
-        contenido = f.read()
-        datos_json = json.loads(contenido)
-
-        if not len(datos_json) == 6:
-            print("Archivo JSON no válido")
-            return 0
-
-        try:
-            r = int(datos_json.get("rows"))
-            c = int(datos_json.get("cols"))
-            m = int(datos_json.get("max_n"))
-        except:
-            print("Archivo JSON no válido")
-            return 0
-
-        if r <= 0 or c <= 0:
-                return 0
-
-        if m != 4:
-            print("Error. Únicamente debe haber 4 vecinos posibles")
-            return 0
-
-        elemento4 = datos_json.get("mov")
-        elemento5 = datos_json.get("id_mov")
-
-        comprobacion = [('N', (-1,0)),('E', (0,1)),('S', (1,0)),('O', (0,-1))]
-        
-        j = 0
-        for coor, (e1,e2) in comprobacion:
-
-            if e1 != elemento4[j][0]:
-                print("Archivo JSON no válido")
-            
-            if e2 != elemento4[j][1]:
-                print("Archivo JSON no válido")
-
-            if coor != elemento5[j]:
-                print("Archivo JSON no válido")
-                return 0
-                
-            j = j + 1
-
-        if elemento5[0] != 'N' or elemento5[1] != 'E' or elemento5[2] != 'S' or elemento5[3] != 'O':
-            print("Archivo JSON no válido")
-            return 0
-
-        elemento6 = datos_json.get("cells")
-
-        filas = datos_json['rows']
-        columnas = datos_json['cols']
-
-        maze_json = Maze_from_json(filas, columnas, elemento6)
-        maze_json.write_svg("tusmuertos.svg")
-        #pasar a png
+    #def leer_json(self):
+       
 
     def encontrar_vecinos_validos(self, cell):
-        """Return a list of unvisited neighbours to cell."""
 
         self.delta = [('O', (-1,0)),
                  ('E', (1,0)),
@@ -264,8 +252,7 @@ class Maze:
         return neighbours
 
     def encontrar_vecinos(self, cell, camino):
-        """Return a list of unvisited neighbours to cell."""
-
+        
         self.delta = [('O', (-1,0)),
                  ('E', (1,0)),
                  ('S', (0,1)),
@@ -294,8 +281,7 @@ class Maze:
         return False
     
     def write_svg(self, filename):
-        """Write an SVG image of the maze to filename."""
-
+     
         aspect_ratio = self.xmax / self.ymax
         # Pad the maze all around by this amount.
         padding = 10
@@ -310,8 +296,7 @@ class Maze:
         
 
         def write_wall(f, x1, y1, x2, y2):
-            """Write a single wall to the SVG image file handle f."""
-
+         
             print('<line x1="{}" y1="{}" x2="{}" y2="{}"/>'
                                 .format(x1, y1, x2, y2), file=f)
 
@@ -420,7 +405,11 @@ class Maze:
             
         maze.write_svg("maze_terminado.svg")
         #print("Ya no hay mas celdas")
-              
+"""
+
+"""              
+
+
 # Tamaño laberinto
 nx, ny = 10,10
 #nx = int(input())
@@ -437,11 +426,15 @@ start_time = time()
 maze.generar_json(maze)
 elapsed_time = time() - start_time
 print(f"La generación del JSON ha tardado {elapsed_time} segundos")
-
-maze.leer_json() #PEDRO
-
+"""
+maze_from_json = Maze_from_json("puzzle_10x20.json") #PEDRO
+maze_from_json.write_svg("maze_from_json.svg")
+drawing = svg2rlg("maze_from_json.svg")
+renderPM.drawToFile(drawing, "maze_from_json.png", fmt = "PNG")
+"""
 start_time = time()
 drawing = svg2rlg("maze_terminado.svg")
 renderPM.drawToFile(drawing, "maze.png", fmt="PNG")
 elapsed_time = time() - start_time
 print(f"La generación de la imagen ha tardado {elapsed_time} segundos")
+"""
