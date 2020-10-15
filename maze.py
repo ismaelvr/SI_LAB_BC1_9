@@ -160,7 +160,7 @@ class Maze_from_json:
             print('</svg>', file=f)
 
 #######################################
-"""
+
 class Maze:
     
     def __init__(self, nx, ny):
@@ -339,33 +339,30 @@ class Maze:
         #celda_actual.visitado = True
     
         #Primero encontramos el destino
-        with open("depuracion.txt", 'w') as f:
-            while not self.destino_encontrado(celda_actual): 
-                #El destino va a ser siempre el mismo, nosotro cambiamos la posicion inicial
-                vecinos_validos = self.encontrar_vecinos_validos(celda_actual)
-                
-                if not vecinos_validos:
-                    #print(f"Ibamos a {celda_actual.x}, {celda_actual.y} pero no se puede")
-                    celda_actual.visitado = True
-                    celda_actual = visitados.pop()
-                    continue
-                
+        while not self.destino_encontrado(celda_actual): 
+            #El destino va a ser siempre el mismo, nosotro cambiamos la posicion inicial
+            vecinos_validos = self.encontrar_vecinos_validos(celda_actual)
+            
+            if not vecinos_validos:
+                #print(f"Ibamos a {celda_actual.x}, {celda_actual.y} pero no se puede")
                 celda_actual.visitado = True
-                #print(f'{celda_actual.x}, {celda_actual.y}')
-                #print(vecinos_validos)
-                direccion, siguiente_celda = random.choice(vecinos_validos)
-                celda_actual.crear_vecino(siguiente_celda,direccion)
-                visitados.append(celda_actual)
-                f.write(str(celda_actual.x))
-                f.write(",")
-                f.write(str(celda_actual.y))
-                f.write("\n")
-                #print(visitados)
-                celda_actual = siguiente_celda
-            celda_actual.visitado = True #Marcamos el destino como true
+                celda_actual = visitados.pop()
+                continue
+            
+            celda_actual.visitado = True
+            #print(f'{celda_actual.x}, {celda_actual.y}')
+            #print(vecinos_validos)
+            direccion, siguiente_celda = random.choice(vecinos_validos)
+            celda_actual.crear_vecino(siguiente_celda,direccion)
+            visitados.append(celda_actual)
+            #print(visitados)
+            celda_actual = siguiente_celda
+        celda_actual.visitado = True #Marcamos el destino como true
+        
+        
         #print(f"Hemos llegado al destino: {celda_actual.x}, {celda_actual.y}")
         #print("Ahora vamos a rellenar lo que falta")
-        maze.write_svg("maze_a_medias.svg")
+        #maze.write_svg("maze_a_medias.svg")
         #Hemos encontrado el destino pero igual quedan casillas por visitar
         
         while self.quedan_celdas():
@@ -403,38 +400,49 @@ class Maze:
                 #print(f"Siguiente casilla: {celda_actual.x},{celda_actual.y} ")
             #print("Parece que se ha salido")
             
-        maze.write_svg("maze_terminado.svg")
+        #maze.write_svg("maze_terminado.svg")
         #print("Ya no hay mas celdas")
-"""
 
-"""              
+print("Elige: ")
+print("1. Crear laberinto aleatorio ")
+print("2. Cargar laberinto desde JSON ")
 
+eleccion = int(input())
+if (eleccion == 1):
+    print("Introduzca el ancho del laberinto:")
+    nx = int(input())
+    print("Introduzca el alto del laberinto:")
+    ny = int(input())
 
-# Tamaño laberinto
-nx, ny = 10,10
-#nx = int(input())
-#ny = int(input())
-start_time = time()
-maze = Maze(nx, ny)
-maze.crear_laberinto() #cambiar las paredes de abajo y derecha
+    start_time = time()
+    maze = Maze(nx, ny)
+    maze.crear_laberinto() #cambiar las paredes de abajo y derecha
+    elapsed_time = time() - start_time
+    print(f"La generación del laberinto ha tardado {elapsed_time} segundos")
 
-
-elapsed_time = time() - start_time
-print(f"La generación del laberinto ha tardado {elapsed_time} segundos")
-
-start_time = time()
-maze.generar_json(maze)
-elapsed_time = time() - start_time
-print(f"La generación del JSON ha tardado {elapsed_time} segundos")
-"""
-maze_from_json = Maze_from_json("puzzle_10x20.json") #PEDRO
-maze_from_json.write_svg("maze_from_json.svg")
-drawing = svg2rlg("maze_from_json.svg")
-renderPM.drawToFile(drawing, "maze_from_json.png", fmt = "PNG")
-"""
-start_time = time()
-drawing = svg2rlg("maze_terminado.svg")
-renderPM.drawToFile(drawing, "maze.png", fmt="PNG")
-elapsed_time = time() - start_time
-print(f"La generación de la imagen ha tardado {elapsed_time} segundos")
-"""
+    start_time = time()
+    maze.generar_json(maze)
+    elapsed_time = time() - start_time
+    print(f"La generación del JSON ha tardado {elapsed_time} segundos")
+    
+    start_time = time()
+    maze.write_svg("maze.svg")
+    drawing = svg2rlg("maze.svg")
+    renderPM.drawToFile(drawing, "maze.png", fmt="PNG")
+    elapsed_time = time() - start_time
+    print(f"La generación de la imagen ha tardado {elapsed_time} segundos")
+elif (eleccion == 2):
+    print("Indica el nombre del archivo")
+    filename = input()
+    start_time = time()
+    maze_from_json = Maze_from_json("ejemplosJson/"+filename+".json")  #PEDRO
+    elapsed_time = time() - start_time
+    print(f"La lectura del JSON y creación del laberinto ha tardado {elapsed_time} segundos")
+    start_time = time()
+    maze_from_json.write_svg("maze_from_json.svg")
+    drawing = svg2rlg("maze_from_json.svg")
+    renderPM.drawToFile(drawing, "maze_from_json.png", fmt = "PNG")
+    elapsed_time = time() - start_time
+    print(f"La generación del PNG ha tardado {elapsed_time} segundos")
+else:
+    print("Eleccion incorrecta. Fin del programa")
