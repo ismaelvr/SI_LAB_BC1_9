@@ -1,6 +1,4 @@
-# df_maze.py
 import random
-import matplotlib.pyplot as plt
 import numpy as np
 from time import time
 from svglib.svglib import svg2rlg
@@ -17,6 +15,7 @@ class Cell:
 
         self.valor=0
         self.x, self.y = x, y
+        self.valor=1
 
         self.walls = {'N': False, 'E': False, 'S': False, 'O': False}
     def tiene_muros(self): 
@@ -232,10 +231,7 @@ class Maze:
         with open("maze.json", 'w') as file:
             file.write(json)
             file.close()
-
-    #def leer_json(self):
-       
-
+    
     def encontrar_vecinos_validos(self, cell):
 
         self.delta = [('O', (-1,0)),
@@ -446,3 +442,6 @@ elif (eleccion == 2):
     print(f"La generación del PNG ha tardado {elapsed_time} segundos")
 else:
     print("Eleccion incorrecta. Fin del programa")
+
+
+    
