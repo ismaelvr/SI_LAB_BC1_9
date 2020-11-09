@@ -39,15 +39,19 @@ class Problema:
         except:
             print("Error al abrir el json")
             exit(1)
-            
-        nodoInicial=NodoArbol(self.id_nodo,0,estadoInicial,None,None,0,0,0)
-        self.id_nodo=self.id_nodo+1
-        self.frontera.push(nodoInicial)
 
-    #def añadir_nodo(self):
+        self.añadir_nodo(0,estadoInicial,None,None,0,0,0) 
+        
+        
+
+    def añadir_nodo(self,coste,estado,padre,accion,p,h,valor):
+        nodo=NodoArbol(self.id_nodo,coste,estado,padre,accion,p,h,valor)
+        self.id_nodo=self.id_nodo+1
+        self.frontera.push(nodo)
 
     def crear_aleatorio(self):
-        aux = self.espacioEstados.crear_aleatorio()
+        aux,estado = self.espacioEstados.crear_aleatorio()
+        self.añadir_nodo(0,estado,None,None,0,0,random.randrange(4))
         return aux
 
     
@@ -82,7 +86,8 @@ class EspacioEstados:
         y = random.randrange(self.maze.ymax)
         estado = self.crearEstado("({}, {})".format(x,y))
         suc = self.sucesores(estado)
-        return "SUC(({}, {}))={}".format(x,y,suc)
+        ret1="SUC(({}, {}))={}".format(x,y,suc)
+        return ret1,estado
 
     def sucesores(self,estado):    
         suc = []
@@ -137,5 +142,9 @@ problema = Problema(datos_json)
 
 for i in range(100):
     print(problema.crear_aleatorio())
+
+for i in range(101):
+    nodo = problema.frontera.pop()
+    print("id:{} estado:{} f:{}".format(nodo.id_nodo,nodo.estado.id,nodo.valor))
 
     
