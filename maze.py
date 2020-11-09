@@ -36,6 +36,8 @@ class Cell_from_json:
 
         self.walls = walls
 
+        self.valor = 0
+
 class Maze_from_json:
     
     def __init__(self, filename):
@@ -43,6 +45,7 @@ class Maze_from_json:
         f = open(filename, "r")
         contenido = f.read()
         datos_json = json.loads(contenido)
+        valor=0
         #self.comprobar_json(datos_json)
         
 
@@ -399,49 +402,54 @@ class Maze:
         #maze.write_svg("maze_terminado.svg")
         #print("Ya no hay mas celdas")
 
-print("Elige: ")
-print("1. Crear laberinto aleatorio ")
-print("2. Cargar laberinto desde JSON ")
+'''
+def main():
+    print("Elige: ")
+    print("1. Crear laberinto aleatorio ")
+    print("2. Cargar laberinto desde JSON ")
 
-eleccion = int(input())
-if (eleccion == 1):
-    print("Introduzca el ancho del laberinto:")
-    nx = int(input())
-    print("Introduzca el alto del laberinto:")
-    ny = int(input())
+    eleccion = int(input())
+    if (eleccion == 1):
+        print("Introduzca el ancho del laberinto:")
+        nx = int(input())
+        print("Introduzca el alto del laberinto:")
+        ny = int(input())
 
-    start_time = time()
-    maze = Maze(nx, ny)
-    maze.crear_laberinto() #cambiar las paredes de abajo y derecha
-    elapsed_time = time() - start_time
-    print(f"La generación del laberinto ha tardado {elapsed_time} segundos")
+        start_time = time()
+        maze = Maze(nx, ny)
+        maze.crear_laberinto() #cambiar las paredes de abajo y derecha
+        elapsed_time = time() - start_time
+        print(f"La generación del laberinto ha tardado {elapsed_time} segundos")
 
-    start_time = time()
-    maze.generar_json(maze)
-    elapsed_time = time() - start_time
-    print(f"La generación del JSON ha tardado {elapsed_time} segundos")
+        start_time = time()
+        maze.generar_json(maze)
+        elapsed_time = time() - start_time
+        print(f"La generación del JSON ha tardado {elapsed_time} segundos")
     
-    start_time = time()
-    maze.write_svg("maze.svg")
-    drawing = svg2rlg("maze.svg")
-    renderPM.drawToFile(drawing, "maze.png", fmt="PNG")
-    elapsed_time = time() - start_time
-    print(f"La generación de la imagen ha tardado {elapsed_time} segundos")
-elif (eleccion == 2):
-    print("Indica el nombre del archivo")
-    filename = input()
-    start_time = time()
-    maze_from_json = Maze_from_json("ejemplosJson/"+filename+".json")  #PEDRO
-    elapsed_time = time() - start_time
-    print(f"La lectura del JSON y creación del laberinto ha tardado {elapsed_time} segundos")
-    start_time = time()
-    maze_from_json.write_svg("maze_from_json.svg")
-    drawing = svg2rlg("maze_from_json.svg")
-    renderPM.drawToFile(drawing, "maze_from_json.png", fmt = "PNG")
-    elapsed_time = time() - start_time
-    print(f"La generación del PNG ha tardado {elapsed_time} segundos")
-else:
-    print("Eleccion incorrecta. Fin del programa")
+        start_time = time()
+        maze.write_svg("maze.svg")
+        drawing = svg2rlg("maze.svg")
+        renderPM.drawToFile(drawing, "maze.png", fmt="PNG")
+        elapsed_time = time() - start_time
+        print(f"La generación de la imagen ha tardado {elapsed_time} segundos")
+    elif (eleccion == 2):
+        print("Indica el nombre del archivo")
+        filename = input()
+        start_time = time()
+        maze_from_json = Maze_from_json("ejemplosJson/"+filename+".json")  #PEDRO
+        elapsed_time = time() - start_time
+        print(f"La lectura del JSON y creación del laberinto ha tardado {elapsed_time} segundos")
+        start_time = time()
+        maze_from_json.write_svg("maze_from_json.svg")
+        drawing = svg2rlg("maze_from_json.svg")
+        renderPM.drawToFile(drawing, "maze_from_json.png", fmt = "PNG")
+        elapsed_time = time() - start_time
+        print(f"La generación del PNG ha tardado {elapsed_time} segundos")
+    else:
+        print("Eleccion incorrecta. Fin del programa")
 
+def if __name__ == "__main__":
+    main()
+'''
 
     

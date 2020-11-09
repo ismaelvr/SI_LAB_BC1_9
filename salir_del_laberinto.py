@@ -1,23 +1,24 @@
-import maze.py
-from sortedcontainers import SortedKeyList
+from maze import *
+import operator
+import json
+import random
 
 class Frontera:
 
     def __init__(self):
-        self._frontier = self.crea_frontera()
+        self._frontier = self._crea_frontera()
 
     def _crea_frontera(self):
-            frontier = SortedKeyList(key=NodoArbol.get_f)
-            return frontier
+        return []
 
     def push(self, node):
-        if isinstance(node, NodoArbol):
-            self._frontier.add(node)
-        else:
-            print("Error. No es un nodo.")
+        f,x,y=node.get_valor(),node.get_x(),node.get_y()
+        self._frontier.append([node,f,x,y])
 
     def pop(self):
-        return self._frontier.pop(0)
+        self._frontier.sort(key= operator.itemgetter(1,2,3))
+        aux=self._frontier.pop(0)
+        return aux[0]
 
     def es_vacia(self):
         if bool(self._frontier):
@@ -29,16 +30,25 @@ class Problema:
     def __init__(self,json):
         self.id_nodo=0
         self.frontera=Frontera()
-        self.estadoInicial=str(json.get("INITIAL"))
-        obj=str(json.get("OBJECTIVE"))
-        maze = Maze_from_json(str(json.get("MAZE")))
-
-        self.espacioEstados=EspacioEstados(obj,maze)
-
-        
-        nodoInicial=NodoArbol(self.id_nodo,0,self.estadoIncial,None,None,0,0,0)
+        try:
+            estadoInicial=str(json.get("INITIAL"))
+            obj=str(json.get("OBJETIVE"))
+            maze = Maze_from_json(str(json.get("MAZE")))
+            self.espacioEstados=EspacioEstados(maze,obj)
+            estadoInicial= self.espacioEstados.crearEstado(estadoInicial)
+        except:
+            print("Error al abrir el json")
+            exit(1)
+            
+        nodoInicial=NodoArbol(self.id_nodo,0,estadoInicial,None,None,0,0,0)
         self.id_nodo=self.id_nodo+1
         self.frontera.push(nodoInicial)
+
+    #def añadir_nodo(self):
+
+    def crear_aleatorio(self):
+        aux = self.espacioEstados.crear_aleatorio()
+        return aux
 
     
     def calcular_f(self):
@@ -60,19 +70,30 @@ class EspacioEstados:
         self.obj=objetivo
 
     def crearEstado(self,id):
-        celda = self.maze.maze_map[id[1:2]][id[4:5]]
-        return Estado(id,celda)
+        aux= id[1:-1]
+        aux = aux.split(',')
+        x=int(aux[0])
+        y=int(aux[1])
+        celda = self.maze.maze_map[y][x]
+        return Estado(id,celda,x,y)
+    
+    def crear_aleatorio(self):
+        x = random.randrange(self.maze.xmax)
+        y = random.randrange(self.maze.ymax)
+        estado = self.crearEstado("({}, {})".format(x,y))
+        suc = self.sucesores(estado)
+        return "SUC(({}, {}))={}".format(x,y,suc)
 
     def sucesores(self,estado):    
         suc = []
         if estado.vecinos[0]==True:
-            suc.add(['N',"({}, {})".format(self.x,self.y+1),1])
+            suc.append(['N',"({}, {})".format(estado.x-1,estado.y),1])
         if estado.vecinos[1]==True:
-            suc.add(['E',"({}, {})".format(self.x+1,self.y),1])
+            suc.append(['E',"({}, {})".format(estado.x,estado.y+1),1])
         if estado.vecinos[2]==True:
-            suc.add(['S',"({}, {})".format(self.x,self.y-1),1])
+            suc.append(['S',"({}, {})".format(estado.x+1,estado.y),1])
         if estado.vecinos[3]==True:
-            suc.add(['O',"({}, {})".format(self.x-1,self.y),1])
+            suc.append(['O',"({}, {})".format(estado.x,estado.y-1),1])
         return suc
 
     def objetivo(self,estado):
@@ -82,14 +103,15 @@ class EspacioEstados:
 
 class Estado:
     
-     def __init__(self,id,celda):
+     def __init__(self,id,celda,x,y):
          self.id=id
          self.valor=celda.valor
          self.vecinos=celda.walls
+         self.x,self.y =x,y
 
 class NodoArbol():
 
-    def __init__(self, id_nodo, costo, estado, padre, accion, p, h, valor):
+    def __init__(self, id_nodo, coste, estado, padre, accion, p, h, valor):
         self.id_nodo = id_nodo
         self.padre = padre
         self.estado = estado
@@ -97,7 +119,23 @@ class NodoArbol():
         self.accion = accion
         self.profundidad = p
         self.h = h
+        self.valor = valor
 
-    def get_h(self):
-        return self.h
+    def get_valor(self):
+        return self.valor
+    def get_x(self):
+        return self.estado.x
+    def get_y(self):
+        return self.estado.y
 
+
+filename=input("Introduzca el nombre del archivo\n")
+f = open(filename, "r")
+contenido = f.read()
+datos_json = json.loads(contenido)
+problema = Problema(datos_json)
+
+for i in range(100):
+    print(problema.crear_aleatorio())
+
+    
