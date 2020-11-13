@@ -133,18 +133,21 @@ class NodoArbol():
     def get_y(self):
         return self.estado.y
 
+def main():
+    filename=input("Introduzca el nombre del archivo\n")
+    f = open(filename, "r")
+    contenido = f.read()
+    datos_json = json.loads(contenido)
+    problema = Problema(datos_json)
 
-filename=input("Introduzca el nombre del archivo\n")
-f = open(filename, "r")
-contenido = f.read()
-datos_json = json.loads(contenido)
-problema = Problema(datos_json)
+    for i in range(100):
+        print(problema.crear_aleatorio())
 
-for i in range(100):
-    print(problema.crear_aleatorio())
+    for i in range(101):
+        nodo = problema.frontera.pop()
+        print("id:{} estado:{} f:{}".format(nodo.id_nodo,nodo.estado.id,nodo.valor))
 
-for i in range(101):
-    nodo = problema.frontera.pop()
-    print("id:{} estado:{} f:{}".format(nodo.id_nodo,nodo.estado.id,nodo.valor))
+if __name__ == "__main__":
+    main()
 
     
