@@ -203,10 +203,10 @@ class Maze:
 
     def __str__(self):
         #Convertir en cadena 
-        maze_rows = ['-' * nx*2]
-        for y in range(ny):
+        maze_rows = ['-' * self.xmax*2]
+        for y in range(self.ymax):
             maze_row = ['|']
-            for x in range(nx):
+            for x in range(self.xmax):
                 if not self.maze_map[x][y].walls['E']:
                     maze_row.append(' |') #Ponemos pared al Este de la casilla
                     #print(x,y)
@@ -214,7 +214,7 @@ class Maze:
                     maze_row.append('  ')
             maze_rows.append(''.join(maze_row))
             maze_row = ['|']
-            for x in range(nx):
+            for x in range(self.xmax):
                 if not self.maze_map[x][y].walls['S']:
                     maze_row.append('-+')  #Ponemos pared al Sur de la casilla
                     #print(x,y)
@@ -224,7 +224,7 @@ class Maze:
         return '\n'.join(maze_rows)
 
     def generar_json(self, maze):         
-        json='{{\n\t"rows" : {},\n\t"cols" : {},\n\t"max_n" : 4,'.format(nx,ny)
+        json='{{\n\t"rows" : {},\n\t"cols" : {},\n\t"max_n" : 4,'.format(maze.xmax,maze.ymax)
         json=json+'\n\t"mov" : [[-1,0],[0,1],[1,0],[0,-1]],\n\t"id_mov" : ["N","E","S","O"],\n\t"cells" : {'
         for i in range(self.xmax):
             for j in range(self.ymax):
@@ -244,8 +244,8 @@ class Maze:
         neighbours = []
         for direction, (dx,dy) in self.delta:
             x2, y2 = cell.x + dx, cell.y + dy
-            if (0 <= x2 < nx) and (0 <= y2 < ny) and not maze.getCelda(x2,y2).visitado:
-                neighbour = maze.getCelda(x2, y2)
+            if (0 <= x2 < self.xmax) and (0 <= y2 < self.ymax) and not self.getCelda(x2,y2).visitado:
+                neighbour = self.getCelda(x2, y2)
                 if not neighbour.tiene_muros():
                     neighbours.append((direction, neighbour))
         return neighbours
@@ -259,8 +259,8 @@ class Maze:
         neighbours = []
         for direction, (dx,dy) in self.delta:
             x2, y2 = cell.x + dx, cell.y + dy
-            if (0 <= x2 < nx) and (0 <= y2 < ny) and self.getCelda(x2, y2) not in camino:
-                neighbour = maze.getCelda(x2, y2)
+            if (0 <= x2 <self.xmax) and (0 <= y2 < self.ymax) and self.getCelda(x2, y2) not in camino:
+                neighbour = self.getCelda(x2, y2)
                 if not neighbour.tiene_muros():
                     neighbours.append((direction, neighbour))
         return neighbours
@@ -300,7 +300,7 @@ class Maze:
                                 .format(x1, y1, x2, y2), file=f)
         
         def color(x,y,maze_map):
-            color = maze_map[x][y].valor
+            color = maze_map[y][x].valor
             if color==0:
                 return 'white'
             elif color==1:
@@ -346,10 +346,10 @@ class Maze:
             paint_cell(f,scx,scy,maze_map)
             for x in range(self.xmax):
                 for y in range(self.ymax):
-                    if not maze.getCelda(x,y).walls['S']:
+                    if not self.getCelda(x,y).walls['S']:
                         x1, y1, x2, y2 = x*scx, (y+1)*scy, (x+1)*scx, (y+1)*scy   
                         write_wall(f, x1, y1, x2, y2)
-                    if not maze.getCelda(x,y).walls['E']:
+                    if not self.getCelda(x,y).walls['E']:
                         x1, y1, x2, y2 = (x+1)*scx, y*scy, (x+1)*scx, (y+1)*scy
                         
                         write_wall(f, x1, y1, x2, y2)
@@ -431,50 +431,51 @@ class Maze:
         #print("Ya no hay mas celdas")
 
 
+def main():
+    print("Elige: ")
+    print("1. Crear laberinto aleatorio ")
+    print("2. Cargar laberinto desde JSON ")
 
-print("Elige: ")
-print("1. Crear laberinto aleatorio ")
-print("2. Cargar laberinto desde JSON ")
+    eleccion = int(input())
+    if (eleccion == 1):
+        print("Introduzca el ancho del laberinto:")
+        nx = int(input())
+        print("Introduzca el alto del laberinto:")
+        ny = int(input())
 
-eleccion = int(input())
-if (eleccion == 1):
-    print("Introduzca el ancho del laberinto:")
-    nx = int(input())
-    print("Introduzca el alto del laberinto:")
-    ny = int(input())
+        start_time = time()
+        maze = Maze(nx, ny)
+        maze.crear_laberinto() #cambiar las paredes de abajo y derecha
+        elapsed_time = time() - start_time
+        print(f"La generación del laberinto ha tardado {elapsed_time} segundos")
 
-    start_time = time()
-    maze = Maze(nx, ny)
-    maze.crear_laberinto() #cambiar las paredes de abajo y derecha
-    elapsed_time = time() - start_time
-    print(f"La generación del laberinto ha tardado {elapsed_time} segundos")
-
-    start_time = time()
-    maze.generar_json(maze)
-    elapsed_time = time() - start_time
-    print(f"La generación del JSON ha tardado {elapsed_time} segundos")
+        start_time = time()
+        maze.generar_json(maze)
+        elapsed_time = time() - start_time
+        print(f"La generación del JSON ha tardado {elapsed_time} segundos")
     
-    start_time = time()
-    maze.write_svg("maze.svg",maze.maze_map)
-    drawing = svg2rlg("maze.svg")
-    renderPM.drawToFile(drawing, "maze.png", fmt="PNG")
-    elapsed_time = time() - start_time
-    print(f"La generación de la imagen ha tardado {elapsed_time} segundos")
-elif (eleccion == 2):
-    print("Indica el nombre del archivo")
-    filename = input()
-    start_time = time()
-    maze_from_json = Maze_from_json("ejemplosJson/"+filename+".json")  #PEDRO
-    elapsed_time = time() - start_time
-    print(f"La lectura del JSON y creación del laberinto ha tardado {elapsed_time} segundos")
-    start_time = time()
-    maze_from_json.write_svg("maze_from_json.svg")
-    drawing = svg2rlg("maze_from_json.svg")
-    renderPM.drawToFile(drawing, "maze_from_json.png", fmt = "PNG")
-    elapsed_time = time() - start_time
-    print(f"La generación del PNG ha tardado {elapsed_time} segundos")
-else:
-    print("Eleccion incorrecta. Fin del programa")
+        start_time = time()
+        maze.write_svg("maze.svg",maze.maze_map)
+        drawing = svg2rlg("maze.svg")
+        renderPM.drawToFile(drawing, "maze.png", fmt="PNG")
+        elapsed_time = time() - start_time
+        print(f"La generación de la imagen ha tardado {elapsed_time} segundos")
+    elif (eleccion == 2):
+        print("Indica el nombre del archivo")
+        filename = input()
+        start_time = time()
+        maze_from_json = Maze_from_json("ejemplosJson/"+filename+".json")  #PEDRO
+        elapsed_time = time() - start_time
+        print(f"La lectura del JSON y creación del laberinto ha tardado {elapsed_time} segundos")
+        start_time = time()
+        maze_from_json.write_svg("maze_from_json.svg")
+        drawing = svg2rlg("maze_from_json.svg")
+        renderPM.drawToFile(drawing, "maze_from_json.png", fmt = "PNG")
+        elapsed_time = time() - start_time
+        print(f"La generación del PNG ha tardado {elapsed_time} segundos")
+    else:
+        print("Eleccion incorrecta. Fin del programa")
 
-
+if __name__ == "__main__":
+    main()
     
