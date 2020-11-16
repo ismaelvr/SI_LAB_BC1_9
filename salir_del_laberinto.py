@@ -65,7 +65,6 @@ class Problema:
                     
         return nodo_actual
 
-
     def calcular_valor(self,nodo):
 
         if self.estrategia == "Anchura":
@@ -79,12 +78,12 @@ class Problema:
             nodo.valor = -(nodo.padre.p + 1)
             
         if self.estrategia == "Voraz":
-            nodo.h = self.EspacioEstados.calcular_h(nodo.estado)
+            nodo.h = self.espacioEstados.calcular_h(nodo.estado)
             nodo.valor = nodo.h
 
         if self.estrategia == "A*":
-            nodo.h = self.EspacioEstados.calcular_h(nodo.estado)
-            valor = padre.coste + nodo.coste
+            nodo.h = self.espacioEstados.calcular_h(nodo.estado)
+            valor = nodo.padre.coste + nodo.coste
             nodo.valor = nodo.h + valor
     
     def poda(self, estado, valor):
@@ -101,7 +100,7 @@ class Problema:
         return False    
 
     def añadir_nodo(self,estado,accion,padre,p):
-        coste = self.EspacioEstados.calcular_coste(estado)
+        coste = self.espacioEstados.calcular_coste(estado)
         nodo=NodoArbol(self.id_nodo,coste,estado,padre,accion,p+1,0,0)
         nodo.valor=self.calcular_valor(nodo)
         nodo.accion="[{}][{},{}]"
@@ -200,7 +199,7 @@ def main():
     f = open(filename, "r")
     contenido = f.read()
     datos_json = json.loads(contenido)
-    problema = Problema(datos_json)
+    problema = Problema(datos_json,"A*")
 
     for i in range(100):
         print(problema.crear_aleatorio())
