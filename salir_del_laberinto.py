@@ -2,6 +2,7 @@ from maze import *
 import operator
 import json
 import random
+import math
 
 class Frontera:
 
@@ -27,9 +28,13 @@ class Frontera:
 
 class Problema:
 
-    def __init__(self,json):
+    def __init__(self,json,estrategia):
+        self.__poda = {}
         self.id_nodo=0
         self.frontera=Frontera()
+        self.prof_max=1000000
+        self.solucion=False
+        self.estrategia=estrategia
         try:
             estadoInicial=str(json.get("INITIAL"))
             obj=str(json.get("OBJETIVE"))
@@ -40,32 +45,74 @@ class Problema:
             print("Error al abrir el json")
             exit(1)
 
-        self.añadir_nodo(0,estadoInicial,None,None,0,0,0) 
-        
-        
+        self.añadir_nodo(estadoInicial,None,None,0)
+        solucion = self.solucinar 
+        if self.solucion:
+            print("SI hay solucion")
+        else:
+            print("NO hay solucion")
+    
+    def solucinar(self):
+        while not self.solucion and  not self.frontera.es_vacia():
+            nodo_actual = self.frontera.pop()
+            if self.espacioEstados.objetivo(nodo_actual.estado):
+                self.solucion = True
+            else:
+                sucesores = self.espacioEstados.sucesores(nodo_actual)
+                for i in sucesores: 
+                    estado = self.espacioEstados.crearEstado(i[1])
+                    self.añadir_nodo(estado,i[0],nodo_actual,nodo_actual.p)
+                    
+        return nodo_actual
 
-    def añadir_nodo(self,coste,estado,padre,accion,p,h,valor):
-        nodo=NodoArbol(self.id_nodo,coste,estado,padre,accion,p,h,valor)
+
+    def calcular_valor(self,nodo):
+
+        if self.estrategia == "Anchura":
+            nodo.valor = nodo.padre.p + 1
+
+        if self.estrategia == "Costo uniforme":
+            nodo.valor = nodo.padre.coste + nodo.coste
+
+        if self.estrategia == "Profundidad":
+            #falta hacer profundidad acotada
+            nodo.valor = -(nodo.padre.p + 1)
+            
+        if self.estrategia == "Voraz":
+            nodo.h = self.EspacioEstados.calcular_h(nodo.estado)
+            nodo.valor = nodo.h
+
+        if self.estrategia == "A*":
+            nodo.h = self.EspacioEstados.calcular_h(nodo.estado)
+            valor = padre.coste + nodo.coste
+            nodo.valor = nodo.h + valor
+    
+    def poda(self, estado, valor):
+        '''
+        hace la poda del arbol
+        '''
+        if not estado in self.__poda:
+            self.__poda[estado] = valor
+            return True
+        if self.__poda.get(estado) > valor:
+            self.__poda.pop(estado)
+            self.__poda[estado] = valor
+            return True
+        return False    
+
+    def añadir_nodo(self,estado,accion,padre,p):
+        coste = self.EspacioEstados.calcular_coste(estado)
+        nodo=NodoArbol(self.id_nodo,coste,estado,padre,accion,p+1,0,0)
+        nodo.valor=self.calcular_valor(nodo)
+        nodo.accion="[{}][{},{}]"
         self.id_nodo=self.id_nodo+1
-        self.frontera.push(nodo)
-
+        if poda(estado,nodo.valor):
+            self.frontera.push(nodo)
+    
     def crear_aleatorio(self):
         aux,estado = self.espacioEstados.crear_aleatorio()
         self.añadir_nodo(0,estado,None,None,0,0,random.randrange(4))
         return aux
-
-    
-    def calcular_f(self):
-        if self.solucion=="anchura":
-            return 1
-        elif self.solucion=="profundidad":
-            return 1
-        elif self.solucion=="costo uniforme":
-            return 1
-        elif self.solucion=="voraz":
-            return 1
-        else:
-            return 1
 
 class EspacioEstados:
 
@@ -106,6 +153,19 @@ class EspacioEstados:
             return True
         return False
 
+    def calcular_h(self,estado):
+        aux= self.obj[1:-1]
+        aux = aux.split(',')
+        x=int(aux[0])
+        y=int(aux[1])
+        sol = abs(estado.x-x)+ abs(estado.y-y)
+        print("h: {} estado: {},{}\n".format(sol,x,y))
+        return sol
+
+    def calcular_coste(self,estado):
+        cell =self.maze.maze_map[estado.y][estado.x]
+        return cell.valor + 1
+
 class Estado:
     
      def __init__(self,id,celda,x,y):
@@ -132,6 +192,8 @@ class NodoArbol():
         return self.estado.x
     def get_y(self):
         return self.estado.y
+    
+
 
 def main():
     filename=input("Introduzca el nombre del archivo\n")
@@ -149,5 +211,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-    

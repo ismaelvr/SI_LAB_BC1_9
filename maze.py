@@ -45,7 +45,6 @@ class Maze_from_json:
         f = open(filename, "r")
         contenido = f.read()
         datos_json = json.loads(contenido)
-        valor= 0
         #self.comprobar_json(datos_json)
         
 
@@ -54,7 +53,9 @@ class Maze_from_json:
         self.ymax = datos_json['rows']
         self.xmax = datos_json['cols']
 
-        self.maze_map = [[Cell_from_json(y,x, cells.get("({}, {})".format(y,x)).get("neighbors")) for y in range(self.ymax)] for x in range(self.xmax)]
+        
+
+        self.maze_map = [[Cell_from_json(y,x, cells.get("({}, {})".format(y,x)).get("neighbors"),cells.get("({}, {})".format(y,x)).get("value")) for y in range(self.ymax)] for x in range(self.xmax)]
         
 
     def comprobar_json(self, datos_json):
@@ -82,6 +83,8 @@ class Maze_from_json:
         elemento4 = datos_json.get("mov")
         elemento5 = datos_json.get("id_mov")
 
+
+
         comprobacion = [('N', (-1,0)),('E', (0,1)),('S', (1,0)),('O', (0,-1))]
         
         j = 0
@@ -103,11 +106,12 @@ class Maze_from_json:
             print("Archivo JSON no válido")
             return 0
 
+
     def getCelda(self, x, y):
   
         return self.maze_map[x][y]
 
-    def write_svg(self, filename):
+    def write_svg(self, filename,maze_from_json):
         """Write an SVG image of the maze to filename."""
 
         aspect_ratio = self.xmax / self.ymax
@@ -121,6 +125,31 @@ class Maze_from_json:
             height=height*int(self.ymax/self.xmax)
         # Scaling factors mapping maze coordinates to image coordinates
         scy, scx = height / self.ymax, width / self.xmax
+
+        def color(x,y,maze_map):
+            color = maze_map[y][x].valor
+            if color==0:
+                return 'white'
+            elif color==1:
+                return 'rgb(200,75,0)'#marron
+            elif color==2:
+                return 'green'
+            elif color==3:
+                return 'blue'
+            return 'red'
+
+        def paint_cell(f,scx,scy,maze_map):
+            x1=0.0
+            y1=0.0
+            y=0
+            for x in range(self.ymax):
+                aux = color(x,y,maze_map)
+                print('<rect x="{}" y="{}" width="{}" height="{}" fill="{}"/>'.format(y1,x1,scx,scy,aux),file=f)
+                for y in range(self.xmax):
+                    print('<rect x="{}" y="{}" width="{}" height="{}" fill="{}"/>'.format(y1,x1,scx,scy,color(x,y,maze_map)),file=f)
+                    y1=(y+1)*scy
+                x1 = (x+1)*scx
+                y1=0
         
 
         def write_wall(f, x1, y1, x2, y2):
@@ -147,6 +176,7 @@ class Maze_from_json:
             # Draw the "South" and "East" walls of each cell, if present (these
             # are the "North" and "West" walls of a neighbouring cell in
             # general, of course).
+            paint_cell(f,scx,scy,maze_from_json.maze_map)
             for x in range(self.xmax):
                 for y in range(self.ymax):
                     if not maze_from_json.getCelda(x,y).walls[2]:
@@ -464,11 +494,11 @@ def main():
         print("Indica el nombre del archivo")
         filename = input()
         start_time = time()
-        maze_from_json = Maze_from_json("ejemplosJson/"+filename+".json")  #PEDRO
+        maze_from_json = Maze_from_json("problema_10x10_maze.json")  #PEDRO
         elapsed_time = time() - start_time
         print(f"La lectura del JSON y creación del laberinto ha tardado {elapsed_time} segundos")
         start_time = time()
-        maze_from_json.write_svg("maze_from_json.svg")
+        maze_from_json.write_svg("maze_from_json.svg",maze_from_json)
         drawing = svg2rlg("maze_from_json.svg")
         renderPM.drawToFile(drawing, "maze_from_json.png", fmt = "PNG")
         elapsed_time = time() - start_time
