@@ -4,6 +4,46 @@ import json
 import random
 import math
 
+class Stack:
+    '''
+    crea una pila
+    '''
+    def __init__(self):
+        '''
+        inicia la pila
+        '''
+        self.items = []
+
+    def is_empty(self):
+        '''
+        comprueba si esta vacia
+        '''
+        return self.items == []
+
+    def push(self, item):
+        '''
+        push
+        '''
+        self.items.append(item)
+
+    def pop(self):
+        '''
+        pop
+        '''
+        return self.items.pop()
+
+    def peek(self):
+        '''
+        peek
+        '''
+        return self.items[len(self.items)-1]
+
+    def size(self):
+        '''
+        size
+        '''
+        return len(self.items)
+
 class Frontera:
 
     def __init__(self):
@@ -46,71 +86,98 @@ class Problema:
             exit(1)
 
         self.añadir_nodo(estadoInicial,None,None,0)
-        solucion = self.solucinar 
+        solucion = self.solucinar()
+
         if self.solucion:
             print("SI hay solucion")
+            self.escribir_solucion(solucion)
         else:
             print("NO hay solucion")
-    
+
+    def escribir_solucion(self,solucion):
+        fichero = open("sol_{}x{}_{}.txt".format(self.espacioEstados.maze.xmax,self.espacioEstados.maze.ymax,self.estrategia), 'w')
+        fichero.write(str("[id][cost,state,father_id,action,depth,h,value]\n"))
+        pila = Stack()
+        while solucion.padre is not None:
+            aux="[{}][{},{},{},{},{},{},{}]\n".format(solucion.id_nodo,solucion.coste,solucion.estado.id,solucion.padre.id_nodo,solucion.accion,solucion.p,solucion.h,solucion.valor)
+            pila.push(aux)
+            solucion=solucion.padre
+        aux="[{}][{},{},None,{},{},{},{}]\n".format(solucion.id_nodo,solucion.coste,solucion.estado.id,solucion.accion,solucion.p,solucion.h,solucion.valor)
+        pila.push(aux)
+        while not pila.is_empty():
+            fichero.write(str(pila.pop()))
+        fichero.close()
+ 
     def solucinar(self):
+        nodo_actual = None
         while not self.solucion and  not self.frontera.es_vacia():
             nodo_actual = self.frontera.pop()
             if self.espacioEstados.objetivo(nodo_actual.estado):
                 self.solucion = True
             else:
-                sucesores = self.espacioEstados.sucesores(nodo_actual)
+                sucesores = self.espacioEstados.sucesores(nodo_actual.estado)
                 for i in sucesores: 
                     estado = self.espacioEstados.crearEstado(i[1])
                     self.añadir_nodo(estado,i[0],nodo_actual,nodo_actual.p)
                     
         return nodo_actual
 
-    def calcular_valor(self,nodo):
+    def calcular_valor(self,nodo,coste_padre):
 
-        if self.estrategia == "Anchura":
-            nodo.valor = nodo.padre.p + 1
+        if self.estrategia == "BREATH":
+            if nodo.padre is not None:
+                nodo.valor = nodo.padre.p + 1
+            else:
+                nodo.valor=1
 
-        if self.estrategia == "Costo uniforme":
-            nodo.valor = nodo.padre.coste + nodo.coste
+        if self.estrategia == "UNIFORM":
+            nodo.valor = nodo.coste
 
-        if self.estrategia == "Profundidad":
+        if self.estrategia == "DEPTH":
             #falta hacer profundidad acotada
-            nodo.valor = -(nodo.padre.p + 1)
+            if nodo.padre is not None:
+                nodo.valor = -(nodo.padre.p + 1)
+            else:
+                nodo.valor= -1
             
-        if self.estrategia == "Voraz":
+        if self.estrategia == "GREEDY":
             nodo.h = self.espacioEstados.calcular_h(nodo.estado)
             nodo.valor = nodo.h
 
-        if self.estrategia == "A*":
+        if self.estrategia == "A":
             nodo.h = self.espacioEstados.calcular_h(nodo.estado)
-            valor = nodo.padre.coste + nodo.coste
-            nodo.valor = nodo.h + valor
+            nodo.valor = nodo.h + nodo.coste
     
     def poda(self, estado, valor):
         '''
         hace la poda del arbol
         '''
-        if not estado in self.__poda:
-            self.__poda[estado] = valor
+        if not estado.id in self.__poda:
+            self.__poda[estado.id] = valor
             return True
-        if self.__poda.get(estado) > valor:
-            self.__poda.pop(estado)
-            self.__poda[estado] = valor
+        if self.__poda.get(estado.id) > valor:
+            self.__poda.pop(estado.id)
+            self.__poda[estado.id] = valor
             return True
         return False    
 
     def añadir_nodo(self,estado,accion,padre,p):
         coste = self.espacioEstados.calcular_coste(estado)
-        nodo=NodoArbol(self.id_nodo,coste,estado,padre,accion,p+1,0,0)
-        nodo.valor=self.calcular_valor(nodo)
-        nodo.accion="[{}][{},{}]"
+        if padre is not None:
+            nodo=NodoArbol(self.id_nodo,coste+padre.coste,estado,padre,accion,p+1,0,0)
+        else:
+            nodo=NodoArbol(self.id_nodo,coste,estado,padre,accion,p+1,0,0)
+        if padre is None:
+            self.calcular_valor(nodo,0)
+        else:
+            self.calcular_valor(nodo,padre.coste)
         self.id_nodo=self.id_nodo+1
-        if poda(estado,nodo.valor):
+        if self.poda(estado,nodo.valor):
             self.frontera.push(nodo)
     
     def crear_aleatorio(self):
         aux,estado = self.espacioEstados.crear_aleatorio()
-        self.añadir_nodo(0,estado,None,None,0,0,random.randrange(4))
+        self.añadir_nodo(estado,None,None,0)
         return aux
 
 class EspacioEstados:
@@ -158,7 +225,7 @@ class EspacioEstados:
         x=int(aux[0])
         y=int(aux[1])
         sol = abs(estado.x-x)+ abs(estado.y-y)
-        print("h: {} estado: {},{}\n".format(sol,x,y))
+        #print("h: {} estado: {},{}\n".format(sol,estado.x,estado.y))
         return sol
 
     def calcular_coste(self,estado):
@@ -181,7 +248,7 @@ class NodoArbol():
         self.estado = estado
         self.coste = coste
         self.accion = accion
-        self.profundidad = p
+        self.p = p
         self.h = h
         self.valor = valor
 
@@ -197,16 +264,24 @@ class NodoArbol():
 def main():
     filename=input("Introduzca el nombre del archivo\n")
     f = open(filename, "r")
+    eleccion=int(input("Elige:\n1.Anchura\n2.Profundidad acotada\n3.Coste Uniforme\n4.Voraz\n5.A*\n"))
+    if eleccion == 1:
+        estrategia="BREATH"
+    elif eleccion == 2:
+        estrategia="DEPTH"
+    elif eleccion == 3:
+        estrategia="UNIFORM"
+    elif eleccion == 4:
+        estrategia="GREEDY"
+    elif eleccion == 5:
+        estrategia="A"
+    else:
+        print("Eleccion erronea")
+        exit(1)
     contenido = f.read()
     datos_json = json.loads(contenido)
-    problema = Problema(datos_json,"A*")
+    problema = Problema(datos_json,estrategia)
 
-    for i in range(100):
-        print(problema.crear_aleatorio())
-
-    for i in range(101):
-        nodo = problema.frontera.pop()
-        print("id:{} estado:{} f:{}".format(nodo.id_nodo,nodo.estado.id,nodo.valor))
 
 if __name__ == "__main__":
     main()
