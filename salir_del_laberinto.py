@@ -124,7 +124,11 @@ class Problema:
                 for i in sucesores: 
                     estado = self.espacioEstados.crearEstado(i[1])
                     self.añadir_nodo(estado,i[0],nodo_actual,nodo_actual.p)
-                    
+        while not self.frontera.es_vacia():
+            frontera_restante = self.frontera.pop()
+            #x, y = frontera_restante.estado.x, frontera_restante.estado.y
+            self.espacioEstados.set_color(1,frontera_restante.estado)
+                   
         return nodo_actual
 
     def calcular_valor(self,nodo,coste_padre):
@@ -159,7 +163,7 @@ class Problema:
         '''
         if not estado.id in self.__poda:
             self.__poda[estado.id] = valor
-            self.espacioEstados.set_color(1,estado)
+            #self.espacioEstados.set_color(1,estado)
             return True
         if self.__poda.get(estado.id) > valor:
             self.__poda.pop(estado.id)
