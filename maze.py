@@ -38,6 +38,9 @@ class Cell_from_json:
 
         self.valor = valor
 
+        self.color=-1 #0 solucion,1 frontera, 2 arbol interior
+    
+
 class Maze_from_json:
     
     def __init__(self, filename):
@@ -127,16 +130,27 @@ class Maze_from_json:
         scy, scx = height / self.ymax, width / self.xmax
 
         def color(x,y,maze_map):
-            color = maze_map[y][x].valor
+            valor = maze_map[y][x].valor
+            color = maze_map[y][x].color
+            
             if color==0:
-                return 'white'
+                return 'red'
             elif color==1:
-                return 'rgb(200,75,0)'#marron
+                return 'blue'
             elif color==2:
                 return 'green'
-            elif color==3:
-                return 'blue'
-            return 'red'
+            
+            elif valor==0:
+                return 'white'
+            elif valor==1:
+                return 'rgb(187,133,68)'#marron
+            elif valor==2:
+                return 'rgb(86,232,137)'#verde
+            elif valor==3:
+                return 'rgb(133,240,227)'#azul
+
+            
+
 
         def paint_cell(f,scx,scy,maze_map):
             x1=0.0

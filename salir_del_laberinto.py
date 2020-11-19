@@ -3,6 +3,7 @@ import operator
 import json
 import random
 import math
+from os import remove
 
 class Stack:
     '''
@@ -47,17 +48,14 @@ class Stack:
 class Frontera:
 
     def __init__(self):
-        self._frontier = self._crea_frontera()
-
-    def _crea_frontera(self):
-        return []
+        self._frontier = []
 
     def push(self, node):
-        f,x,y=node.get_valor(),node.get_x(),node.get_y()
-        self._frontier.append([node,f,x,y])
+        f,x,y,z=node.get_valor(),node.get_x(),node.get_y(),node.get_id()
+        self._frontier.append([node,f,x,y,z])
 
     def pop(self):
-        self._frontier.sort(key= operator.itemgetter(1,2,3))
+        self._frontier.sort(key= operator.itemgetter(1,2,3,4))
         aux=self._frontier.pop(0)
         return aux[0]
 
@@ -99,14 +97,21 @@ class Problema:
         fichero.write(str("[id][cost,state,father_id,action,depth,h,value]\n"))
         pila = Stack()
         while solucion.padre is not None:
+            self.espacioEstados.set_color(0,solucion.estado)
             aux="[{}][{},{},{},{},{},{},{}]\n".format(solucion.id_nodo,solucion.coste,solucion.estado.id,solucion.padre.id_nodo,solucion.accion,solucion.p,solucion.h,solucion.valor)
             pila.push(aux)
             solucion=solucion.padre
         aux="[{}][{},{},None,{},{},{},{}]\n".format(solucion.id_nodo,solucion.coste,solucion.estado.id,solucion.accion,solucion.p,solucion.h,solucion.valor)
+        self.espacioEstados.set_color(0,solucion.estado)
         pila.push(aux)
         while not pila.is_empty():
             fichero.write(str(pila.pop()))
         fichero.close()
+        archivo="maze_{}x{}_{}".format(self.espacioEstados.maze.xmax,self.espacioEstados.maze.ymax,self.estrategia)
+        self.espacioEstados.maze.write_svg("{}.svg".format(archivo),self.espacioEstados.maze)
+        drawing = svg2rlg(f"{archivo}.svg")
+        renderPM.drawToFile(drawing, f"{archivo}.png", fmt = "PNG")
+        remove(f"{archivo}.svg")
  
     def solucinar(self):
         nodo_actual = None
@@ -128,7 +133,7 @@ class Problema:
             if nodo.padre is not None:
                 nodo.valor = nodo.padre.p + 1
             else:
-                nodo.valor=1
+                nodo.valor=0
 
         if self.estrategia == "UNIFORM":
             nodo.valor = nodo.coste
@@ -138,7 +143,7 @@ class Problema:
             if nodo.padre is not None:
                 nodo.valor = -(nodo.padre.p + 1)
             else:
-                nodo.valor= -1
+                nodo.valor= 0
             
         if self.estrategia == "GREEDY":
             nodo.h = self.espacioEstados.calcular_h(nodo.estado)
@@ -154,6 +159,7 @@ class Problema:
         '''
         if not estado.id in self.__poda:
             self.__poda[estado.id] = valor
+            self.espacioEstados.set_color(1,estado)
             return True
         if self.__poda.get(estado.id) > valor:
             self.__poda.pop(estado.id)
@@ -162,16 +168,21 @@ class Problema:
         return False    
 
     def añadir_nodo(self,estado,accion,padre,p):
+        self.espacioEstados.set_color(2,estado)
         coste = self.espacioEstados.calcular_coste(estado)
+        if self.id_nodo == 0:
+            coste=0
+        h = self.espacioEstados.calcular_h(estado)
         if padre is not None:
-            nodo=NodoArbol(self.id_nodo,coste+padre.coste,estado,padre,accion,p+1,0,0)
+            nodo=NodoArbol(self.id_nodo,coste+padre.coste,estado,padre,accion,p+1,h,0)
         else:
-            nodo=NodoArbol(self.id_nodo,coste,estado,padre,accion,p+1,0,0)
+            nodo=NodoArbol(self.id_nodo,coste,estado,padre,accion,p,h,0)
         if padre is None:
             self.calcular_valor(nodo,0)
         else:
             self.calcular_valor(nodo,padre.coste)
         self.id_nodo=self.id_nodo+1
+        
         if self.poda(estado,nodo.valor):
             self.frontera.push(nodo)
     
@@ -199,8 +210,8 @@ class EspacioEstados:
         y = random.randrange(self.maze.ymax)
         estado = self.crearEstado("({}, {})".format(x,y))
         suc = self.sucesores(estado)
-        ret1="SUC(({}, {}))={}".format(x,y,suc)
-        return ret1,estado
+        aux="SUC(({}, {}))={}".format(x,y,suc)
+        return aux,estado
 
     def sucesores(self,estado):    
         suc = []
@@ -232,6 +243,10 @@ class EspacioEstados:
         cell =self.maze.maze_map[estado.y][estado.x]
         return cell.valor + 1
 
+    def set_color(self,color,estado):
+        celda = self.maze.maze_map[estado.y][estado.x]
+        celda.color=color
+
 class Estado:
     
      def __init__(self,id,celda,x,y):
@@ -254,13 +269,16 @@ class NodoArbol():
 
     def get_valor(self):
         return self.valor
+    
     def get_x(self):
         return self.estado.x
+    
     def get_y(self):
         return self.estado.y
     
-
-
+    def get_id(self):
+        return self.id_nodo
+    
 def main():
     filename=input("Introduzca el nombre del archivo\n")
     f = open(filename, "r")
@@ -285,3 +303,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
