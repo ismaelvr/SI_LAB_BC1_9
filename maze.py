@@ -56,8 +56,6 @@ class Maze_from_json:
         self.ymax = datos_json['rows']
         self.xmax = datos_json['cols']
 
-        
-
         self.maze_map = [[Cell_from_json(y,x, cells.get("({}, {})".format(y,x)).get("neighbors"),cells.get("({}, {})".format(y,x)).get("value")) for y in range(self.ymax)] for x in range(self.xmax)]
         
 
@@ -85,8 +83,6 @@ class Maze_from_json:
 
         elemento4 = datos_json.get("mov")
         elemento5 = datos_json.get("id_mov")
-
-
 
         comprobacion = [('N', (-1,0)),('E', (0,1)),('S', (1,0)),('O', (0,-1))]
         
@@ -143,14 +139,11 @@ class Maze_from_json:
             elif valor==0:
                 return 'white'
             elif valor==1:
-                return 'rgb(187,133,68)'#marron
+                return 'rgb(245, 222, 179)'#marron
             elif valor==2:
-                return 'rgb(86,232,137)'#verde
+                return 'rgb(152, 251, 152)'#verde
             elif valor==3:
-                return 'rgb(133,240,227)'#azul
-
-            
-
+                return 'rgb(135, 206, 250)'#azul
 
         def paint_cell(f,scx,scy,maze_map):
             x1=0.0
@@ -165,7 +158,6 @@ class Maze_from_json:
                 x1 = (x+1)*scx
                 y1=0
         
-
         def write_wall(f, x1, y1, x2, y2):
             """Write a single wall to the SVG image file handle f."""
 
@@ -185,7 +177,7 @@ class Maze_from_json:
             print('<defs>\n<style type="text/css"><![CDATA[', file=f)
             print('line {', file=f)
             print('    stroke: #000000;\n    stroke-linecap: square;', file=f)
-            print('    stroke-width: 5;\n}', file=f)
+            print('    stroke-width: 3;\n}', file=f)
             print(']]></style>\n</defs>', file=f)
             # Draw the "South" and "East" walls of each cell, if present (these
             # are the "North" and "West" walls of a neighbouring cell in
