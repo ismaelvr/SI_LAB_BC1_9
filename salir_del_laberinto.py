@@ -146,9 +146,10 @@ class Problema:
             #falta hacer profundidad acotada
 
             if nodo.padre is not None:
-                nodo.valor = -(nodo.padre.p + 1)
+                nodo.valor = float(1/(nodo.p + 1))
             else:
-                nodo.valor= 0
+                nodo.p = 0
+                nodo.valor= float(1)
             
         if self.estrategia == "GREEDY":
             nodo.h = self.espacioEstados.calcular_h(nodo.estado)
@@ -185,9 +186,9 @@ class Problema:
         if padre is not None:
             nodo=NodoArbol(self.id_nodo,coste+padre.coste,estado,padre,accion,padre.p + 1,h,0)
         else:
-            nodo=NodoArbol(self.id_nodo,coste,estado,padre,accion,p,h,0)
+            nodo=NodoArbol(self.id_nodo,coste,estado,padre,accion,0,h,0)
         if padre is None:
-            self.calcular_valor(nodo,0)
+            self.calcular_valor(nodo,0) #coste padre sobra
         else:
             self.calcular_valor(nodo,padre.coste)
         self.id_nodo=self.id_nodo+1
