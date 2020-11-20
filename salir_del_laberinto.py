@@ -115,18 +115,18 @@ class Problema:
  
     def solucinar(self):
         nodo_actual = None
-        while not self.solucion and  not self.frontera.es_vacia():
+        while not self.solucion and not self.frontera.es_vacia():
             nodo_actual = self.frontera.pop()
             if self.espacioEstados.objetivo(nodo_actual.estado):
                 self.solucion = True
             else:
-                sucesores = self.espacioEstados.sucesores(nodo_actual.estado)
-                for i in sucesores: 
-                    estado = self.espacioEstados.crearEstado(i[1])
-                    self.añadir_nodo(estado,i[0],nodo_actual,nodo_actual.p)
+                if nodo_actual.p < self.prof_max:
+                    sucesores = self.espacioEstados.sucesores(nodo_actual.estado)
+                    for i in sucesores: 
+                        estado = self.espacioEstados.crearEstado(i[1])
+                        self.añadir_nodo(estado,i[0],nodo_actual,nodo_actual.p)
         while not self.frontera.es_vacia():
             frontera_restante = self.frontera.pop()
-            #x, y = frontera_restante.estado.x, frontera_restante.estado.y
             self.espacioEstados.set_color(1,frontera_restante.estado)
                    
         return nodo_actual
@@ -144,6 +144,7 @@ class Problema:
 
         if self.estrategia == "DEPTH":
             #falta hacer profundidad acotada
+
             if nodo.padre is not None:
                 nodo.valor = -(nodo.padre.p + 1)
             else:
@@ -165,7 +166,11 @@ class Problema:
             self.__poda[estado.id] = valor
             #self.espacioEstados.set_color(1,estado)
             return True
-        if self.__poda.get(estado.id) > valor:
+        if self.estrategia == "DEPTH" and self.__poda.get(estado.id) < valor:
+            self.__poda.pop(estado.id)
+            self.__poda[estado.id] = valor
+            return True
+        if self.estrategia != "DEPTH" and self.__poda.get(estado.id) > valor:
             self.__poda.pop(estado.id)
             self.__poda[estado.id] = valor
             return True
@@ -178,7 +183,7 @@ class Problema:
             coste=0
         h = self.espacioEstados.calcular_h(estado)
         if padre is not None:
-            nodo=NodoArbol(self.id_nodo,coste+padre.coste,estado,padre,accion,p+1,h,0)
+            nodo=NodoArbol(self.id_nodo,coste+padre.coste,estado,padre,accion,padre.p + 1,h,0)
         else:
             nodo=NodoArbol(self.id_nodo,coste,estado,padre,accion,p,h,0)
         if padre is None:
