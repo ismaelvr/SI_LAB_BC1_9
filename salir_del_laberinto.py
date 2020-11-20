@@ -107,7 +107,7 @@ class Problema:
         while not pila.is_empty():
             fichero.write(str(pila.pop()))
         fichero.close()
-        archivo="maze_{}x{}_{}".format(self.espacioEstados.maze.xmax,self.espacioEstados.maze.ymax,self.estrategia)
+        archivo="sol_maze_{}x{}_{}".format(self.espacioEstados.maze.xmax,self.espacioEstados.maze.ymax,self.estrategia)
         self.espacioEstados.maze.write_svg("{}.svg".format(archivo),self.espacioEstados.maze)
         drawing = svg2rlg(f"{archivo}.svg")
         renderPM.drawToFile(drawing, f"{archivo}.png", fmt = "PNG")

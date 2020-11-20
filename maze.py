@@ -134,7 +134,7 @@ class Maze_from_json:
             elif color==1:
                 return 'blue'
             elif color==2:
-                return 'green'
+                return 'rgb(0,255,0)'
             
             elif valor==0:
                 return 'white'
