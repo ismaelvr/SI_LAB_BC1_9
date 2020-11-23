@@ -67,6 +67,7 @@ class Frontera:
 class Problema:
 
     def __init__(self,json,estrategia):
+        self.visitados =[]
         self.__poda = {}
         self.id_nodo=0
         self.frontera=Frontera()
@@ -120,18 +121,20 @@ class Problema:
             if self.espacioEstados.objetivo(nodo_actual.estado):
                 self.solucion = True
             else:
-                if nodo_actual.p < self.prof_max:
+                if not nodo_actual.estado.id in self.visitados and nodo_actual.p < self.prof_max:
+                    self.visitados.append(nodo_actual.estado.id)
                     sucesores = self.espacioEstados.sucesores(nodo_actual.estado)
                     for i in sucesores: 
                         estado = self.espacioEstados.crearEstado(i[1])
                         self.añadir_nodo(estado,i[0],nodo_actual,nodo_actual.p)
         while not self.frontera.es_vacia():
             frontera_restante = self.frontera.pop()
-            self.espacioEstados.set_color(1,frontera_restante.estado)
+            if frontera_restante.estado.id not in self.visitados:
+                self.espacioEstados.set_color(1,frontera_restante.estado)
                    
         return nodo_actual
 
-    def calcular_valor(self,nodo,coste_padre):
+    def calcular_valor(self,nodo):
 
         if self.estrategia == "BREATH":
             if nodo.padre is not None:
@@ -143,8 +146,6 @@ class Problema:
             nodo.valor = nodo.coste
 
         if self.estrategia == "DEPTH":
-            #falta hacer profundidad acotada
-
             if nodo.padre is not None:
                 nodo.valor = float(1/(nodo.p + 1))
             else:
@@ -159,24 +160,6 @@ class Problema:
             nodo.h = self.espacioEstados.calcular_h(nodo.estado)
             nodo.valor = nodo.h + nodo.coste
     
-    def poda(self, estado, valor):
-        '''
-        hace la poda del arbol
-        '''
-        if not estado.id in self.__poda:
-            self.__poda[estado.id] = valor
-            #self.espacioEstados.set_color(1,estado)
-            return True
-        if self.estrategia == "DEPTH" and self.__poda.get(estado.id) < valor:
-            self.__poda.pop(estado.id)
-            self.__poda[estado.id] = valor
-            return True
-        if self.estrategia != "DEPTH" and self.__poda.get(estado.id) > valor:
-            self.__poda.pop(estado.id)
-            self.__poda[estado.id] = valor
-            return True
-        return False    
-
     def añadir_nodo(self,estado,accion,padre,p):
         self.espacioEstados.set_color(2,estado)
         coste = self.espacioEstados.calcular_coste(estado)
@@ -188,14 +171,15 @@ class Problema:
         else:
             nodo=NodoArbol(self.id_nodo,coste,estado,padre,accion,0,h,0)
         if padre is None:
-            self.calcular_valor(nodo,0) #coste padre sobra
+            self.calcular_valor(nodo) #coste padre sobra
         else:
-            self.calcular_valor(nodo,padre.coste)
+            self.calcular_valor(nodo)
         self.id_nodo=self.id_nodo+1
         
-        if self.poda(estado,nodo.valor):
-            self.frontera.push(nodo)
-    
+        self.frontera.push(nodo)
+     
+        
+        
     def crear_aleatorio(self):
         aux,estado = self.espacioEstados.crear_aleatorio()
         self.añadir_nodo(estado,None,None,0)
